@@ -27,7 +27,7 @@ var (
 type BlockProcessor interface {
 	Init()
 	GetType() string
-	Process(block []byte) (output []byte, err error)
+	Process(block []byte) (output []byte, files []string, err error)
 	GetReplacement(file string) string
 }
 
@@ -56,9 +56,9 @@ func (p *RegexpBlockProcessor) GetReplacement(filename string) string {
 	return strings.Replace(p.replacement, "$FILE", filename, -1)
 }
 
-func (p *RegexpBlockProcessor) Process(block []byte) (output []byte, err error) {
+func (p *RegexpBlockProcessor) Process(block []byte) (output []byte, files []string, err error) {
 	matches := p._re.FindAllSubmatch(block, -1)
-	files := make([]string, len(matches))
+	files = make([]string, len(matches))
 	for i, match := range matches {
 		fmt.Printf("Processing %s ...\n", match[1])
 		files[i] = string(match[1])

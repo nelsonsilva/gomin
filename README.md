@@ -1,0 +1,1 @@
+run -b ~/inEvo/sites/www.inevo.pt/public ~/inEvo/sites/www.inevo.pt/layouts/index.html

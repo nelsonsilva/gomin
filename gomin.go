@@ -17,10 +17,11 @@ const (
 )
 
 var (
-	basePath   = flag.String("b", "", "base path to the resources (js, css, etc)")
-	outputFile = flag.String("o", "", "the output file")
-	help       = flag.Bool("h", false, "show this help")
-	version    = flag.Bool("v", false, "version info")
+	basePath    = flag.String("b", "", "base path to the resources (js, css, etc)")
+	outputFile  = flag.String("o", "", "the output file")
+	deleteFiles = flag.Bool("d", false, "delete concatenated files")
+	help        = flag.Bool("h", false, "show this help")
+	version     = flag.Bool("v", false, "version info")
 )
 
 // Block
@@ -39,12 +40,20 @@ func (b *Block) process() (err error) {
 		return
 	}
 
-	output, err := p.Process(b.content)
+	output, files, err := p.Process(b.content)
+
+	if err != nil {
+		return
+	}
 
 	fmt.Printf("Writing %s ...\n", b.blockType)
 
 	outputFile := path.Join(*basePath, b.outFilename)
 	err = ioutil.WriteFile(outputFile, output, 0644)
+
+	if *deleteFiles {
+		DeleteFiles(files)
+	}
 
 	return
 }
