@@ -30,6 +30,7 @@ type Block struct {
 	idx         []int
 	outFilename string // the ouput filename
 	content     []byte
+	replacement []byte
 }
 
 func (b *Block) process() (err error) {
@@ -48,8 +49,15 @@ func (b *Block) process() (err error) {
 
 	fmt.Printf("Writing %s ...\n", b.blockType)
 
-	outputFile := path.Join(*basePath, b.outFilename)
-	err = ioutil.WriteFile(outputFile, output, 0644)
+	if b.outFilename == "" { // Add the content inline
+		b.replacement = []byte(p.GetInlineReplacement(string(output)))
+	} else { // write the content to a file
+		outputFile := path.Join(*basePath, b.outFilename)
+		err = ioutil.WriteFile(outputFile, output, 0644)
+
+		// setup the replacement
+		b.replacement = []byte(p.GetReplacement(b.outFilename))
+	}
 
 	if *deleteFiles {
 		DeleteFiles(files)
@@ -95,7 +103,7 @@ func main() {
 
 	// Find with regexp (non greedy .*?)
 	// <!-- build:js js/scroll.min.js --> * <!-- endbuild -->
-	blockre, err := regexp.Compile(`<!--(?:\s)*build\:(\w+)(?:\s)*(\S+)(?:\s)*-->((?s).*?)<!--(?:\s)*endbuild(?:\s)*-->`)
+	blockre, err := regexp.Compile(`<!--(?:\s)*build\:(\w+)(?:\s)*(\S*)(?:\s)*-->((?s).*?)<!--(?:\s)*endbuild(?:\s)*-->`)
 	if err != nil {
 		return // there was a problem with the regular expression.
 	}
@@ -177,9 +185,7 @@ func main() {
 		}
 
 		// write the replacement
-		p := GetBlockProcessor(block.blockType)
-
-		if _, err := w.Write([]byte(p.GetReplacement(block.outFilename))); err != nil {
+		if _, err := w.Write(block.replacement); err != nil {
 			panic(err)
 		}
 

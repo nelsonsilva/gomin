@@ -13,13 +13,15 @@ var (
 		blockType:   "js",
 		regexp:      `<script(?:.*)src="([^"]*)`,
 		replacement: `<script src="$FILE" type="text/javascript"></script>`,
+		inline:      `<script type="text/javascript">$CONTENT</script>`,
 		compiler:    &ClosureJSCompiler{compilationLevel: "SIMPLE_OPTIMIZATIONS"},
 	}
 	// CSS Block Processor
 	CSSBlockProcessor = RegexpBlockProcessor{
 		blockType:   "css",
 		regexp:      `<link(?:.*)href="([^"]*)`,
-		replacement: `<link href="$FILE">`,
+		replacement: `<link href="$FILE" rel="stylesheet">`,
+		inline:      `<style>$CONTENT</style>`,
 		compiler:    &YUICompiler{fileType: "CSS"},
 	}
 )
@@ -29,6 +31,7 @@ type BlockProcessor interface {
 	GetType() string
 	Process(block []byte) (output []byte, files []string, err error)
 	GetReplacement(file string) string
+	GetInlineReplacement(content string) string
 }
 
 // Regexp Block Processor
@@ -36,6 +39,7 @@ type RegexpBlockProcessor struct {
 	blockType   string
 	regexp      string
 	replacement string
+	inline      string
 	compiler    Compiler
 	_re         *regexp.Regexp
 }
@@ -50,6 +54,10 @@ func (p *RegexpBlockProcessor) Init() {
 
 func (p *RegexpBlockProcessor) GetType() string {
 	return p.blockType
+}
+
+func (p *RegexpBlockProcessor) GetInlineReplacement(content string) string {
+	return strings.Replace(p.inline, "$CONTENT", content, -1)
 }
 
 func (p *RegexpBlockProcessor) GetReplacement(filename string) string {
